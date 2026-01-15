@@ -1,32 +1,63 @@
 const CACHE_NAME = 'dualpay-v1';
-// Кешираме само локалните файлове, за да гарантираме успешна инсталация.
-// Външните ресурси (CDN) понякога блокират процеса, ако има грешки, затова ги махаме от тук.
+
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon.svg'
 ];
 
-self.addEventListener('install', (e) => {
-  // Това кара браузъра да активира новия Service Worker веднага, 
-  // вместо да чака затваряне на всички табове. Важно за появата на бутона!
-  self.skipWaiting(); 
-  
-  e.waitUntil(
+// INSTALL
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+
+  event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
-      .catch((err) => console.error('Грешка при кеширане:', err))
+      .then((cache) => {
+        return cache.addAll(ASSETS);
+      })
+      .catch((err) => {
+        console.error('Грешка при инсталация на Service Worker:', err);
+      })
   );
 });
 
-self.addEventListener('activate', (e) => {
-  // Позволява на Service Worker-а да поеме контрол над страницата незабавно.
-  e.waitUntil(self.clients.claim());
+// ACTIVATE
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      // почистване на стари кешове
+      caches.keys().then((cacheNames) =>
+        Promise.all(
+          cacheNames.map((cache) => {
+            if (cache !== CACHE_NAME) {
+              return caches.delete(cache);
+            }
+          })
+        )
+      ),
+      self.clients.claim()
+    ])
+  );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
+// FETCH
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return fetch(event.request)
+          .catch(() => {
+            // тук можеш да върнеш fallback страница ако искаш
+            return new Response('Offline', {
+              status: 503,
+              statusText: 'Offline'
+            });
+          });
+      })
   );
 });
