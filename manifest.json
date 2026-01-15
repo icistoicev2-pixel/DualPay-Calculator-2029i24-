@@ -1,17 +1,32 @@
-{
-    "name": "DualPay Calculator",
-    "short_name": "DualPay",
-    "start_url": "./index.html",
-    "display": "standalone",
-    "background_color": "#E0F2F7",
-    "theme_color": "#228B22",
-    "orientation": "portrait",
-    "icons": [
-        {
-            "src": "icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
-        }
-    ]
-}
+const CACHE_NAME = 'dualpay-v1';
+// Кешираме само локалните файлове, за да гарантираме успешна инсталация.
+// Външните ресурси (CDN) понякога блокират процеса, ако има грешки, затова ги махаме от тук.
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon.svg'
+];
+
+self.addEventListener('install', (e) => {
+  // Това кара браузъра да активира новия Service Worker веднага, 
+  // вместо да чака затваряне на всички табове. Важно за появата на бутона!
+  self.skipWaiting(); 
+  
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .catch((err) => console.error('Грешка при кеширане:', err))
+  );
+});
+
+self.addEventListener('activate', (e) => {
+  // Позволява на Service Worker-а да поеме контрол над страницата незабавно.
+  e.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((response) => response || fetch(e.request))
+  );
+});
