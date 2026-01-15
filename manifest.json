@@ -1,63 +1,23 @@
-const CACHE_NAME = 'dualpay-v1';
-
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg'
-];
-
-// INSTALL
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(ASSETS);
-      })
-      .catch((err) => {
-        console.error('Грешка при инсталация на Service Worker:', err);
-      })
-  );
-});
-
-// ACTIVATE
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    Promise.all([
-      // почистване на стари кешове
-      caches.keys().then((cacheNames) =>
-        Promise.all(
-          cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
-              return caches.delete(cache);
-            }
-          })
-        )
-      ),
-      self.clients.claim()
-    ])
-  );
-});
-
-// FETCH
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        return fetch(event.request)
-          .catch(() => {
-            // тук можеш да върнеш fallback страница ако искаш
-            return new Response('Offline', {
-              status: 503,
-              statusText: 'Offline'
-            });
-          });
-      })
-  );
-});
+{
+  "name": "DualPay Calculator",
+  "short_name": "DualPay",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#E0F2F7",
+  "theme_color": "#228B22",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
