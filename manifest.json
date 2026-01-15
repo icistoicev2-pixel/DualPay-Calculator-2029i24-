@@ -1,9 +1,10 @@
 {
   "name": "DualPay Calculator",
   "short_name": "DualPay",
+  "description": "Бърз и лесен калкулатор за плащания в лв и €.",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#E0F2F7",
   "theme_color": "#228B22",
   "icons": [
